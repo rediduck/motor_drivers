@@ -13,6 +13,7 @@
 
 #define CAN_NUM             (2)
 
+#include <stdbool.h>
 #include "main.h"
 
 typedef enum
@@ -31,14 +32,16 @@ typedef enum
 
 typedef struct
 {
-    _Bool enable; // 是否启用
+    bool enable;    // 是否启用
+    bool auto_zero; // 是否自动判断零点
 
     DJI_MotorType_t motor_type; //< 电机类型
     CAN_TypeDef* can;           //< CAN 实例
-    uint8_t id;                 //< 电调 ID (1 ~ 8)
+    uint8_t id1;                //< 电调 ID (1 ~ 8)
     float angle_zero;           //< 零点角度 (unit: degree)
 
     /* Feedback */
+    uint32_t feedback_count; //< 接收到的反馈数据数量
     struct
     {
         float mech_angle; //< 单圈机械角度 (unit: degree)
@@ -62,6 +65,14 @@ typedef struct
     CAN_TypeDef* can; //< CAN 实例
     DJI_t* motors[8]; //< 电机指针数组
 } DJI_FeedbackMap;
+
+typedef struct
+{
+    bool auto_zero;
+    DJI_MotorType_t motor_type;
+    CAN_HandleTypeDef* hcan;
+    uint8_t id1;
+} DJI_Config_t;
 
 #define __DJI_SET_IQ_CMD__(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (__IQ_CMD__))
 

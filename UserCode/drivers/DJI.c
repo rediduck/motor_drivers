@@ -8,7 +8,7 @@
  *
  */
 #include "DJI.h"
-
+#include <string.h>
 #include "bsp/can_driver.h"
 
 static DJI_FeedbackMap map[CAN_NUM];
@@ -26,16 +26,51 @@ static inline DJI_t* getDJIHandle(DJI_t* motors[8], const CAN_RxHeaderTypeDef* h
 {
     if (header->IDE != CAN_ID_STD)
         return NULL;
-    const uint8_t id = header->StdId - 0x200;
+    const uint8_t id0 = header->StdId - 0x201;
     // 不是 DJI 的反馈数据
-    if (id >= 8)
+    if (id0 >= 8)
         return NULL;
-    if (motors[id] == NULL)
+    if (motors[id0] == NULL)
     {
         DJI_ERROR_HANDLER();
         return NULL;
     }
-    return motors[id];
+    return motors[id0];
+}
+
+void DJI_Init(DJI_t* hdji, const DJI_Config_t dji_config)
+{
+    memset(hdji, 0, sizeof(DJI_t));
+
+    hdji->enable    = true;
+    hdji->auto_zero = dji_config.auto_zero;
+    hdji->can       = dji_config.hcan->Instance;
+    hdji->id1       = dji_config.id1;
+
+    /* 注册回调 */
+    DJI_t** mapped_motors = NULL;
+    for (int i = 0; i < map_size; i++)
+        if (map[i].can == hdji->can)
+            mapped_motors = map[i].motors;
+    if (mapped_motors == NULL)
+    {
+        // CAN 未被注册，添加到 map
+        map[map_size] = (DJI_FeedbackMap){
+            .can    = hdji->can,
+            .motors = {NULL} // 为了好看
+        };
+        mapped_motors = map[map_size].motors;
+        map_size++;
+    }
+    if (mapped_motors[hdji->id1 - 1] != NULL)
+    {
+        // 电调 ID 冲突
+        DJI_ERROR_HANDLER();
+    }
+    else
+    {
+        mapped_motors[hdji->id1 - 1] = hdji;
+    }
 }
 
 /**
@@ -62,6 +97,13 @@ void DJI_DataDecode(DJI_t* hdji, const uint8_t data[8])
 
     hdji->feedback.rpm = feedback_rpm;
     hdji->velocity     = hdji->feedback.rpm / reduction_rate;
+
+    hdji->feedback_count++;
+    if (hdji->feedback_count == 50 && hdji->auto_zero)
+    {
+        // 上电后第 50 次反馈执行输出轴清零操作
+        DJI_ResetAngle(hdji);
+    }
 }
 
 /**
