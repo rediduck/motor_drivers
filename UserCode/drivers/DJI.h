@@ -74,7 +74,7 @@ typedef struct
     uint8_t id1;
 } DJI_Config_t;
 
-#define __DJI_SET_IQ_CMD__(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (__IQ_CMD__))
+#define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (__IQ_CMD__))
 
 void DJI_ResetAngle(DJI_t* hdji);
 
