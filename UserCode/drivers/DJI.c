@@ -1,0 +1,159 @@
+/**
+ * @file    DJI.c
+ * @author  syhanjin
+ * @date    2025-09-03
+ * @brief   Brief description of the file
+ *
+ * Detailed description (optional).
+ *
+ */
+#include "DJI.h"
+
+#include "bsp/can_driver.h"
+
+static DJI_FeedbackMap map[CAN_NUM];
+static size_t map_size = 0;
+
+/**
+ * 电机减速比 map
+ */
+static float reduction_rate_map[DJI_MOTOR_TYPE_COUNT] = {
+    [M3508_C620] = (3591.0f / 187.0f),
+    [M2006_C610] = (36.0f),
+};
+
+static inline DJI_t* getDJIHandle(DJI_t* motors[8], const CAN_RxHeaderTypeDef* header)
+{
+    if (header->IDE != CAN_ID_STD)
+        return NULL;
+    const uint8_t id = header->StdId - 0x200;
+    // 不是 DJI 的反馈数据
+    if (id >= 8)
+        return NULL;
+    if (motors[id] == NULL)
+    {
+        DJI_ERROR_HANDLER();
+        return NULL;
+    }
+    return motors[id];
+}
+
+/**
+ * DJI CAN 反馈数据解包
+ * @param hdji DJI handle
+ * @param data 反馈数据
+ */
+void DJI_DataDecode(DJI_t* hdji, const uint8_t data[8])
+{
+    const float feedback_angle = (float)((uint16_t)data[0] << 8 | data[1]) * 360.0f / 8192.0f;
+    const float feedback_rpm   = (float)((int16_t)data[2] << 8 | data[3]);
+    // const float feedback_current = (float)((int16_t)data[4] << 8 | data[5]) / 16384.0f * 20.0f;
+
+    // M3508 和 M2006 的转速均不会超过 120 deg/s
+    if (feedback_angle < 90 && hdji->feedback.mech_angle > 270)
+        hdji->feedback.round_cnt++;
+    if (feedback_angle > 270 && hdji->feedback.mech_angle < 90)
+        hdji->feedback.round_cnt--;
+
+    // 为什么不能用 rust 的 match
+    const float reduction_rate = reduction_rate_map[hdji->motor_type];
+    hdji->feedback.mech_angle  = feedback_angle;
+    hdji->abs_angle            = ((float)hdji->feedback.round_cnt * 360.0f + hdji->feedback.mech_angle - hdji->angle_zero) / reduction_rate;
+
+    hdji->feedback.rpm = feedback_rpm;
+    hdji->velocity     = hdji->feedback.rpm / reduction_rate;
+}
+
+/**
+ * 清零 DJI 输出角度
+ * @param hdji DJI handle
+ */
+void DJI_ResetAngle(DJI_t* hdji)
+{
+    hdji->feedback.round_cnt = 0;
+    hdji->angle_zero         = hdji->feedback.mech_angle;
+    hdji->abs_angle          = 0;
+}
+
+/**
+ *
+ * @param hcan CAN handle
+ * @param cmd_group ID 组
+ */
+void DJI_SendSetIqCommand(CAN_HandleTypeDef* hcan, const DJI_IqSetCmdGroup_t cmd_group)
+{
+    for (int i = 0; i < map_size; i++)
+    {
+        if (hcan->Instance == map[i].can)
+        {
+            uint8_t iq_data[8] = {};
+            for (int j = 0; j < 4; j++)
+            {
+                if (map[i].motors[j + cmd_group] != NULL)
+                {
+                    iq_data[1 + j * 2] = (uint8_t)(map[i].motors[j + cmd_group]->iq_cmd & 0xFF);      // 电流值低 8 位
+                    iq_data[0 + j * 2] = (uint8_t)(map[i].motors[j + cmd_group]->iq_cmd >> 8 & 0xFF); // 电流值高 8 位
+                }
+            }
+            CAN_SendMessage(hcan,
+                            {//
+                             .StdId = cmd_group == IQ_CMD_GROUP_1_4 ? 0x200 : 0x1FF,
+                             .IDE   = CAN_ID_STD,
+                             .RTR   = CAN_RTR_DATA,
+                             .DLC   = 8},
+                            iq_data);
+            return;
+        }
+    }
+}
+
+/**
+ * CAN FIFO0 接收回调函数
+ * @attention 必须*注册*回调函数或者在更高级的回调函数内调用此回调函数
+ * @code 使用
+ *          HAL_CAN_RegisterCallback(hcan, HAL_CAN_RX_FIFO0_MSG_PENDING_CB_ID, DJI_CAN_Fifo0ReceiveCallback);
+ *       来注册回调函数
+ * @param hcan
+ */
+void DJI_CAN_Fifo0ReceiveCallback(CAN_HandleTypeDef* hcan)
+{
+    for (int i = 0; i < map_size; i++)
+    {
+        if (hcan->Instance == map[i].can)
+        {
+            CAN_RxHeaderTypeDef header;
+            uint8_t data[8];
+            if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &header, data) != HAL_OK)
+            {
+                DJI_ERROR_HANDLER();
+                return;
+            }
+            DJI_DataDecode(getDJIHandle(map[i].motors, &header), data);
+            return;
+        }
+    }
+}
+
+/**
+ * CAN FIFI1 接收回调函数
+ * @deprecated Fifo1 should not be used in DJI feedback! Use Fifo0
+ * @param hcan
+ */
+void DJI_CAN_Fifo1ReceiveCallback(CAN_HandleTypeDef* hcan)
+{
+    for (int i = 0; i < map_size; i++)
+    {
+        if (hcan->Instance == map[i].can)
+        {
+            CAN_RxHeaderTypeDef header;
+            uint8_t data[8];
+            if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO1, &header, data) != HAL_OK)
+            {
+                DJI_ERROR_HANDLER();
+                return;
+            }
+            DJI_DataDecode(getDJIHandle(map[i].motors, &header), data);
+            return;
+        }
+    }
+}
