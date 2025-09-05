@@ -48,7 +48,7 @@ void Init(void* argument)
     // HAL_CAN_RegisterCallback(&hcan1, HAL_CAN_RX_FIFO1_MSG_PENDING_CB_ID, DJI_CAN_Fifo1ReceiveCallback);
 
     DJI_PosCtrl_Init(&pos_dji, //
-                     {
+                     (DJI_PosCtrlConfig_t){
                          .dji = (DJI_Config_t){
                              .auto_zero  = true, // 是否在启动时自动清零角度
                              .hcan       = &hcan1,
@@ -69,7 +69,7 @@ void Init(void* argument)
                          }});
 
     DJI_VelCtrl_Init(&vel_dji, //
-                     {
+                     (DJI_VelCtrlConfig_t){
                          .dji = (DJI_Config_t){
                              .auto_zero  = true, // 是否在启动时自动清零角度
                              .hcan       = &hcan1,
