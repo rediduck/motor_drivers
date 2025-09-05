@@ -82,6 +82,7 @@ void DJI_DataDecode(DJI_t* hdji, const uint8_t data[8])
 {
     const float feedback_angle = (float)((uint16_t)data[0] << 8 | data[1]) * 360.0f / 8192.0f;
     const float feedback_rpm   = (float)((int16_t)data[2] << 8 | data[3]);
+    // TODO: 堵转电流检测
     // const float feedback_current = (float)((int16_t)data[4] << 8 | data[5]) / 16384.0f * 20.0f;
 
     // M3508 和 M2006 的转速均不会超过 120 deg/s
@@ -149,6 +150,25 @@ void DJI_SendSetIqCommand(CAN_HandleTypeDef* hcan, const DJI_IqSetCmdGroup_t cmd
     }
 }
 
+void DJI_CAN_FilterInit(CAN_HandleTypeDef* hcan, const uint32_t filter_bank)
+{
+    const CAN_FilterTypeDef sFilterConfig = {
+        .FilterIdHigh         = 0x200 << 5,
+        .FilterIdLow          = 0x0000,
+        .FilterMaskIdHigh     = 0x7F0 << 5, //< 高 7 位匹配，第 4 位忽略
+        .FilterMaskIdLow      = 0x0000,
+        .FilterFIFOAssignment = CAN_FILTER_FIFO0,
+        .FilterBank           = filter_bank,
+        .FilterMode           = CAN_FILTERMODE_IDMASK,
+        .FilterScale          = CAN_FILTERSCALE_32BIT,
+        .FilterActivation     = ENABLE,
+        .SlaveStartFilterBank = 14};
+    if (HAL_CAN_ConfigFilter(hcan, &sFilterConfig) != HAL_OK)
+    {
+        DJI_ERROR_HANDLER();
+    }
+}
+
 /**
  * CAN FIFO0 接收回调函数
  * @attention 必须*注册*回调函数或者在更高级的回调函数内调用此回调函数
@@ -170,7 +190,9 @@ void DJI_CAN_Fifo0ReceiveCallback(CAN_HandleTypeDef* hcan)
                 DJI_ERROR_HANDLER();
                 return;
             }
-            DJI_DataDecode(getDJIHandle(map[i].motors, &header), data);
+            DJI_t* hdji = getDJIHandle(map[i].motors, &header);
+            if (hdji != NULL)
+                DJI_DataDecode(hdji, data);
             return;
         }
     }
@@ -194,7 +216,9 @@ void DJI_CAN_Fifo1ReceiveCallback(CAN_HandleTypeDef* hcan)
                 DJI_ERROR_HANDLER();
                 return;
             }
-            DJI_DataDecode(getDJIHandle(map[i].motors, &header), data);
+            DJI_t* hdji = getDJIHandle(map[i].motors, &header);
+            if (hdji != NULL)
+                DJI_DataDecode(hdji, data);
             return;
         }
     }

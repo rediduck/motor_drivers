@@ -7,11 +7,15 @@
  */
 #ifndef DJI_H
 #define DJI_H
-#define __DJI_VERSION__     "0.0.1"
+#define __DJI_VERSION__       "0.0.1"
 
-#define DJI_ERROR_HANDLER() Error_Handler()
+#define DJI_ERROR_HANDLER()   Error_Handler()
 
-#define CAN_NUM             (2)
+#define CAN_NUM               (2)
+
+#define DJI_M2006_C610_IQ_MAX (10000)
+#define DJI_M3508_C620_IQ_MAX (16384)
+
 
 #include <stdbool.h>
 #include "main.h"
@@ -77,6 +81,7 @@ typedef struct
 #define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (__IQ_CMD__))
 
 void DJI_ResetAngle(DJI_t* hdji);
+void DJI_Init(DJI_t* hdji, DJI_Config_t dji_config);
 
 void DJI_CAN_Fifo0ReceiveCallback(CAN_HandleTypeDef* hcan);
 void DJI_CAN_Fifo1ReceiveCallback(CAN_HandleTypeDef* hcan);
