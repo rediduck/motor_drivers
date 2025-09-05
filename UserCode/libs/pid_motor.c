@@ -10,7 +10,7 @@
 void MOTOR_PID_Calculate(MotorPID_t* hpid)
 {
     hpid->cur_error = hpid->ref - hpid->fdb;
-    hpid->output =
+    hpid->output +=
         hpid->Kp * (hpid->cur_error - hpid->prev_error1) +
         hpid->Ki * hpid->cur_error +
         hpid->Kd * (hpid->cur_error - 2 * hpid->prev_error1 + hpid->prev_error2);
@@ -18,6 +18,9 @@ void MOTOR_PID_Calculate(MotorPID_t* hpid)
         hpid->output = hpid->abs_output_max;
     if (hpid->output < -hpid->abs_output_max)
         hpid->output = -hpid->abs_output_max;
+
+    hpid->prev_error2 = hpid->prev_error1;
+    hpid->prev_error1 = hpid->cur_error;
 }
 
 void MOTOR_PID_Init(MotorPID_t* hpid, const MotorPID_Config_t pid_config)
