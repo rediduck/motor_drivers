@@ -81,7 +81,7 @@ void DJI_Init(DJI_t* hdji, const DJI_Config_t dji_config)
 void DJI_DataDecode(DJI_t* hdji, const uint8_t data[8])
 {
     const float feedback_angle = (float)((uint16_t)data[0] << 8 | data[1]) * 360.0f / 8192.0f;
-    const float feedback_rpm   = (float)((int16_t)data[2] << 8 | data[3]);
+    const float feedback_rpm   = (int16_t)((uint16_t)data[2] << 8 | data[3]);
     // TODO: 堵转电流检测
     // const float feedback_current = (float)((int16_t)data[4] << 8 | data[5]) / 16384.0f * 20.0f;
 
