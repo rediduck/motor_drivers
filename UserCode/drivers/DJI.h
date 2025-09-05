@@ -14,7 +14,7 @@
  */
 #ifndef DJI_H
 #define DJI_H
-#define __DJI_VERSION__       "0.0.1"
+#define __DJI_VERSION__       "0.1.0"
 
 #define DJI_ERROR_HANDLER()   Error_Handler()
 

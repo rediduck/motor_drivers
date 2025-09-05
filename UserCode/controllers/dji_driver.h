@@ -11,7 +11,7 @@
 #include "drivers/DJI.h"
 #include "libs/pid_motor.h"
 
-#define __DJI_DRIVER_VERSION__ "0.0.1"
+#define __DJI_DRIVER_VERSION__ "0.1.0"
 
 typedef struct
 {
