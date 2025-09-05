@@ -52,21 +52,21 @@ void Init(void* argument)
     DJI_PosCtrl_Init(&pos_dji, //
                      (DJI_PosCtrlConfig_t){
                          .dji = (DJI_Config_t){
-                             .auto_zero  = true, // 是否在启动时自动清零角度
+                             .auto_zero  = false, // 是否在启动时自动清零角度
                              .hcan       = &hcan1,
                              .motor_type = M3508_C620,
                              .id1        = 1, // 电调 ID (1~8)
                          },
                          .velocity_pid = (MotorPID_Config_t){
-                             .Kp             = 4.7f,                 //
-                             .Ki             = 0.15f,                //
-                             .Kd             = 0.15f,                //
-                             .abs_output_max = DJI_M3508_C620_IQ_MAX //< 限幅为电流控制最大值
+                             .Kp             = 12.0f,  //
+                             .Ki             = 0.20f,  //
+                             .Kd             = 5.00f,  //
+                             .abs_output_max = 8000.0f // DJI_M3508_C620_IQ_MAX //< 限幅为电流控制最大值
                          },
                          .position_pid = (MotorPID_Config_t){
-                             .Kp             = 13.0f,  //
-                             .Ki             = 0.015f, //
-                             .Kd             = 0.01f,  //
+                             .Kp             = 80.0f,  //
+                             .Ki             = 1.00f,  //
+                             .Kd             = 0.00f,  //
                              .abs_output_max = 2000.0f // 限速
                          },
                          .pos_vel_freq_ratio = 1});
@@ -74,7 +74,7 @@ void Init(void* argument)
     DJI_VelCtrl_Init(&vel_dji, //
                      (DJI_VelCtrlConfig_t){
                          .dji = (DJI_Config_t){
-                             .auto_zero  = true, // 是否在启动时自动清零角度
+                             .auto_zero  = false, // 是否在启动时自动清零角度
                              .hcan       = &hcan1,
                              .motor_type = M3508_C620,
                              .id1        = 2, // 电调 ID (1~8)
