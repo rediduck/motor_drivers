@@ -17,7 +17,7 @@ void DJI_PosCtrl_Init(DJI_PosCtrl_t* hctrl, const DJI_PosCtrlConfig_t config)
     DJI_Init(&hctrl->dji, config.dji);
     MOTOR_PID_Init(&hctrl->velocity_pid, config.velocity_pid);
     MOTOR_PID_Init(&hctrl->position_pid, config.position_pid);
-    hctrl->pos_vel_freq_ratio = config.pos_vel_freq_ratio;
+    hctrl->pos_vel_freq_ratio = config.pos_vel_freq_ratio ? config.pos_vel_freq_ratio : 1;
     hctrl->enable             = true;
 }
 
