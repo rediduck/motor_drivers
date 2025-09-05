@@ -4,6 +4,13 @@
  * @date    2025-09-03
  * @version 0.0.1
  * @brief   DJI Motor driver
+ *
+ * 大疆电机驱动层（并非控制层）
+ * 本驱动仅实现对大疆电机的*控制和数据解析*，不负责控制大疆电机
+ *
+ * 支持的电机类型
+ *  - M3508_C620
+ *  - M2006_C610
  */
 #ifndef DJI_H
 #define DJI_H
@@ -78,7 +85,12 @@ typedef struct
     uint8_t id1;
 } DJI_Config_t;
 
-#define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (__IQ_CMD__))
+/**
+ * 设置电流值（不发送）
+ * @param __DJI_HANDLE__
+ * @param __IQ_CMD__ 设置电流值，int16_t，最大值参考 DJI_[Type]_IQ_MAX
+ */
+#define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (int16_t)(__IQ_CMD__))
 
 void DJI_ResetAngle(DJI_t* hdji);
 void DJI_Init(DJI_t* hdji, DJI_Config_t dji_config);

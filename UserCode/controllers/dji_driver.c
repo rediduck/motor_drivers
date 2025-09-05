@@ -58,7 +58,7 @@ void DJI_PosCtrlCalculate(DJI_PosCtrl_t* hctrl)
     MOTOR_PID_Calculate(&hctrl->velocity_pid);
 
     // ATTENTION: 此处不做输出限幅校验，输出限幅应当放在 PID 参数中
-    hctrl->dji.iq_cmd = (int16_t)hctrl->velocity_pid.output;
+    __DJI_SET_IQ_CMD(&hctrl->dji, hctrl->velocity_pid.output);
 }
 
 /**
@@ -74,5 +74,5 @@ void DJI_VelCtrlCalculate(DJI_VelCtrl_t* hctrl)
     MOTOR_PID_Calculate(&hctrl->pid);
 
     // ATTENTION: 此处不做输出限幅校验，输出限幅应当放在 PID 参数中
-    hctrl->dji.iq_cmd = (int16_t)hctrl->pid.output;
+    __DJI_SET_IQ_CMD(&hctrl->dji, hctrl->pid.output);
 }

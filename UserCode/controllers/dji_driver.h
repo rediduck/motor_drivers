@@ -67,7 +67,7 @@ void DJI_VelCtrlCalculate(DJI_VelCtrl_t* hctrl);
  * @param hctrl 受控对象
  * @param ref 目标值 (unit: deg)
  */
-static inline void DJI_PosCtrl_SetRef(DJI_PosCtrl_t* hctrl, float ref)
+static inline void DJI_PosCtrl_SetRef(DJI_PosCtrl_t* hctrl, const float ref)
 {
     hctrl->position_pid.ref = ref;
 }
@@ -77,7 +77,7 @@ static inline void DJI_PosCtrl_SetRef(DJI_PosCtrl_t* hctrl, float ref)
  * @param hctrl 受控对象
  * @param ref 目标值 (unit: rpm)
  */
-static inline void DJI_VelCtrl_SetRef(DJI_VelCtrl_t* hctrl, float ref)
+static inline void DJI_VelCtrl_SetRef(DJI_VelCtrl_t* hctrl, const float ref)
 {
     hctrl->pid.ref = ref;
 }

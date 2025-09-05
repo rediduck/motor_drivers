@@ -3,6 +3,8 @@
  * @author  syhanjin
  * @date    2025-09-04
  * @brief   CAN wrapper based on HAL library
+ *
+ * 本驱动是对 HAL 库的一层简要封装
  */
 #ifndef CAN_H
 #define CAN_H

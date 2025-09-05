@@ -2,10 +2,6 @@
  * @file    DJI.c
  * @author  syhanjin
  * @date    2025-09-03
- * @brief   Brief description of the file
- *
- * Detailed description (optional).
- *
  */
 #include "DJI.h"
 #include <string.h>

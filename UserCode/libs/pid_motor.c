@@ -2,7 +2,6 @@
  * @file    pid_motor.c
  * @author  syhanjin
  * @date    2025-09-04
- * @brief
  */
 #include "pid_motor.h"
 #include <string.h>
