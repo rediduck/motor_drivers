@@ -14,6 +14,7 @@
 #include "cmsis_os2.h"
 #include "controllers/dji_driver.h"
 #include "drivers/DJI.h"
+#include "tim.h"
 
 DJI_PosCtrl_t pos_dji;
 DJI_VelCtrl_t vel_dji;
@@ -83,6 +84,10 @@ void Init(void* argument)
                              .abs_output_max = DJI_M3508_C620_IQ_MAX //< 限幅为电流控制最大值
                          },
                      });
+
+    // 注册定时器回调
+    HAL_TIM_RegisterCallback(&htim6, HAL_TIM_PERIOD_ELAPSED_CB_ID, TIM6_Callback);
+    HAL_TIM_Base_Start_IT(&htim6);
 
     /* 初始化完成后退出线程 */
     osThreadExit();
