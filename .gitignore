@@ -56,8 +56,11 @@ Release/
 *.ewp
 
 # VSCode / CLion
-.vscode/
-.idea/
+# .vscode/
+# .idea/
+# .clangd
+.eide*
+!.eide/
 
 ### System files ###
 .DS_Store
