@@ -41,12 +41,13 @@ void Init(void* argument)
     /* 执行初始化 */
     // 初始化 CAN
     DJI_CAN_FilterInit(&hcan1, 0);
-    // CAN_Init(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING);
-    CAN_Init(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
     // 注册 DJI 处理回调
     HAL_CAN_RegisterCallback(&hcan1, HAL_CAN_RX_FIFO0_MSG_PENDING_CB_ID, DJI_CAN_Fifo0ReceiveCallback);
     // HAL_CAN_RegisterCallback(&hcan1, HAL_CAN_RX_FIFO1_MSG_PENDING_CB_ID, DJI_CAN_Fifo1ReceiveCallback);
+
+    // CAN_Start(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING);
+    CAN_Start(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
     DJI_PosCtrl_Init(&pos_dji, //
                      (DJI_PosCtrlConfig_t){
@@ -67,7 +68,8 @@ void Init(void* argument)
                              .Ki             = 0.015f, //
                              .Kd             = 0.01f,  //
                              .abs_output_max = 2000.0f // 限速
-                         }});
+                         },
+                         .pos_vel_freq_ratio = 1});
 
     DJI_VelCtrl_Init(&vel_dji, //
                      (DJI_VelCtrlConfig_t){

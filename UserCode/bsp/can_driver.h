@@ -12,6 +12,6 @@
 #define CAN_ERROR_HANDLER() Error_Handler()
 
 uint32_t CAN_SendMessage(CAN_HandleTypeDef* hcan, CAN_TxHeaderTypeDef header, uint8_t data[]);
-void CAN_Init(CAN_HandleTypeDef* hcan, uint32_t ActiveITs);
+void CAN_Start(CAN_HandleTypeDef* hcan, uint32_t ActiveITs);
 
 #endif // CAN_H

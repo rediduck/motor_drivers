@@ -35,7 +35,7 @@ uint32_t CAN_SendMessage(CAN_HandleTypeDef* hcan, const CAN_TxHeaderTypeDef head
  * @param hcan can handle
  * @param ActiveITs CAN_IT_RX_FIFO0_MSG_PENDING | CAN_IT_RX_FIFO1_MSG_PENDING
  */
-void CAN_Init(CAN_HandleTypeDef* hcan, const uint32_t ActiveITs)
+void CAN_Start(CAN_HandleTypeDef* hcan, const uint32_t ActiveITs)
 {
     if (HAL_CAN_Start(hcan) != HAL_OK)
     {
