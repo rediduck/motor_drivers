@@ -158,7 +158,7 @@ ASFLAGS = $(MCU) $(AS_DEFS) $(AS_INCLUDES) $(OPT) -Wall -fdata-sections -ffuncti
 
 CFLAGS += $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-sections
 
-# 侵入式头文件
+# 非侵入式引入头文件
 CFLAGS += -include UserCode/app/app.h
 
 ifeq ($(DEBUG), 1)
