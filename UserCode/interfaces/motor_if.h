@@ -3,6 +3,9 @@
  * @author  syhanjin
  * @date    2025-09-04
  * @brief   unified motor control interface
+ *
+ * 支持的电机类型和依赖
+ *   - drivers/DJI.h: 大疆电机
  */
 #ifndef MOTOR_IF_H
 #define MOTOR_IF_H
