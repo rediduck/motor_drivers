@@ -6,7 +6,7 @@
 #include "pid_motor.h"
 #include <string.h>
 
-void MOTOR_PID_Calculate(MotorPID_t* hpid)
+void MotorPID_Calculate(MotorPID_t* hpid)
 {
     hpid->cur_error = hpid->ref - hpid->fdb;
     hpid->output +=
@@ -22,7 +22,7 @@ void MOTOR_PID_Calculate(MotorPID_t* hpid)
     hpid->prev_error1 = hpid->cur_error;
 }
 
-void MOTOR_PID_Init(MotorPID_t* hpid, const MotorPID_Config_t pid_config)
+void MotorPID_Init(MotorPID_t* hpid, const MotorPID_Config_t pid_config)
 {
     /* reset pid */
     memset(hpid, 0, sizeof(MotorPID_t));

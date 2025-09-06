@@ -41,8 +41,8 @@ typedef struct
     float abs_output_max; //< 输出限幅
 } MotorPID_Config_t;
 
-void MOTOR_PID_Init(MotorPID_t* hpid, MotorPID_Config_t pid_config);
-void MOTOR_PID_Calculate(MotorPID_t* hpid);
+void MotorPID_Init(MotorPID_t* hpid, MotorPID_Config_t pid_config);
+void MotorPID_Calculate(MotorPID_t* hpid);
 
 
 #endif // PID_MOTOR_H

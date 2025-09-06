@@ -90,7 +90,10 @@ typedef struct
  * @param __DJI_HANDLE__
  * @param __IQ_CMD__ 设置电流值，int16_t，最大值参考 DJI_[Type]_IQ_MAX
  */
-#define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) ((__DJI_HANDLE__)->iq_cmd = (int16_t)(__IQ_CMD__))
+#define __DJI_SET_IQ_CMD(__DJI_HANDLE__, __IQ_CMD__) (((DJI_t*)(__DJI_HANDLE__))->iq_cmd = (int16_t)(__IQ_CMD__))
+
+#define __DJI_GET_ANGLE(__DJI_HANDLE__)              (((DJI_t*)(__DJI_HANDLE__))->abs_angle)
+#define __DJI_GET_VELOCITY(__DJI_HANDLE__)           (((DJI_t*)(__DJI_HANDLE__))->velocity)
 
 void DJI_ResetAngle(DJI_t* hdji);
 void DJI_Init(DJI_t* hdji, DJI_Config_t dji_config);
