@@ -41,6 +41,14 @@ typedef struct
     MotorPID_t position_pid;     //< 外环，位置环
     uint32_t pos_vel_freq_ratio; //< 内外环频率比
     uint32_t count;              //< 计数
+
+    struct
+    {
+        float error_threshold; //< 允许的误差范围
+        uint32_t count_max;    //< 保持的计数范围
+        uint32_t counter;      //< 就位计数
+    } settle;                  //< 就位判断
+
 } Motor_PosCtrl_t;
 
 /**
@@ -53,6 +61,9 @@ typedef struct
     MotorPID_Config_t velocity_pid;
     MotorPID_Config_t position_pid;
     uint32_t pos_vel_freq_ratio; //< 内外环频率比
+
+    float error_threshold;     //< 允许的误差范围
+    uint32_t settle_count_max; //< 在误差内多少周期认为就位
 } Motor_PosCtrlConfig_t;
 
 /**
@@ -92,6 +103,16 @@ void Motor_VelCtrlCalculate(Motor_VelCtrl_t* hctrl);
  * @param __CTRL_HANDLE__ 受控对象 (Motor_PosCtrl_t* 或 Motor_VelCtrl_t*)
  */
 #define __MOTOR_CTRL_DISABLE(__CTRL_HANDLE__) ((__CTRL_HANDLE__)->enable = false)
+
+/**
+ * 判断电机位置环控制是否就位
+ * @param hctrl 受控对象
+ * @return 是否就位
+ */
+static inline bool Motor_PosCtrl_IsSettle(Motor_PosCtrl_t* hctrl)
+{
+    return hctrl->settle.counter >= hctrl->settle.count_max;
+}
 
 /**
  * 设置位置环目标值
