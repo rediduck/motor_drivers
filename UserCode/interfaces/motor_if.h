@@ -25,7 +25,7 @@
 typedef enum
 {
 #ifdef USE_DJI
-    MOTOR_TYPE_DJI //< 大疆电机，依赖 drivers/DJI.h
+    MOTOR_TYPE_DJI, //< 大疆电机，依赖 drivers/DJI.h
 #endif
 } MotorType_t;
 
@@ -103,6 +103,17 @@ void Motor_VelCtrlCalculate(Motor_VelCtrl_t* hctrl);
  * @param __CTRL_HANDLE__ 受控对象 (Motor_PosCtrl_t* 或 Motor_VelCtrl_t*)
  */
 #define __MOTOR_CTRL_DISABLE(__CTRL_HANDLE__) ((__CTRL_HANDLE__)->enable = false)
+
+/**
+ * 设置阈值
+ * @param hctrl 受控对象
+ * @param threshold 阈值
+ */
+static inline void Motor_PosCtrl_SetErrorThreshold(Motor_PosCtrl_t* hctrl, const float threshold)
+{
+    if (threshold > 0)
+        hctrl->settle.error_threshold = threshold;
+}
 
 /**
  * 判断电机位置环控制是否就位
