@@ -10,7 +10,7 @@
 #ifndef MOTOR_IF_H
 #define MOTOR_IF_H
 
-#define __MOTOR_IF_VERSION__ "0.1.1"
+#define __MOTOR_IF_VERSION__ "0.1.2"
 
 #include <stdbool.h>
 #include "libs/pid_motor.h"
