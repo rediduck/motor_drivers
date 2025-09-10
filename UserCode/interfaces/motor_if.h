@@ -145,4 +145,44 @@ static inline void Motor_VelCtrl_SetRef(Motor_VelCtrl_t* hctrl, const float ref)
     hctrl->pid.ref = ref;
 }
 
+/* 电机反馈量 */
+
+/**
+ * 获取电机轴输出角度
+ * @param motor_type 电机类型
+ * @param hmotor 电机数据
+ * @return 电机轴输出角度
+ */
+static inline float Motor_GetAngle(const MotorType_t motor_type, void* hmotor)
+{
+    switch (motor_type)
+    {
+#ifdef USE_DJI
+    case MOTOR_TYPE_DJI:
+        return __DJI_GET_ANGLE(hmotor);
+#endif
+    default:
+        return 0.0f;
+    }
+}
+
+/**
+ * 获取电机转速
+ * @param motor_type 电机类型
+ * @param hmotor 电机数据
+ * @return 电机输出转速
+ */
+static inline float Motor_GetVelocity(const MotorType_t motor_type, void* hmotor)
+{
+    switch (motor_type)
+    {
+#ifdef USE_DJI
+    case MOTOR_TYPE_DJI:
+        return __DJI_GET_VELOCITY(hmotor);
+#endif
+    default:
+        return 0.0f;
+    }
+}
+
 #endif // MOTOR_IF_H

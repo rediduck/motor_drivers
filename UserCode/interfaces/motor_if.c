@@ -5,46 +5,7 @@
  * @brief
  */
 #include "motor_if.h"
-
 #include <math.h>
-
-/**
- * 获取电机轴输出角度
- * @param motor_type 电机类型
- * @param hmotor 电机数据
- * @return 电机轴输出角度
- */
-static inline float get_angle(const MotorType_t motor_type, void* hmotor)
-{
-    switch (motor_type)
-    {
-#ifdef USE_DJI
-    case MOTOR_TYPE_DJI:
-        return __DJI_GET_ANGLE(hmotor);
-#endif
-    default:
-        return 0.0f;
-    }
-}
-
-/**
- * 获取电机转速
- * @param motor_type 电机类型
- * @param hmotor 电机数据
- * @return 电机输出转速
- */
-static inline float get_velocity(const MotorType_t motor_type, void* hmotor)
-{
-    switch (motor_type)
-    {
-#ifdef USE_DJI
-    case MOTOR_TYPE_DJI:
-        return __DJI_GET_VELOCITY(hmotor);
-#endif
-    default:
-        return 0.0f;
-    }
-}
 
 /**
  * 设置控制量
@@ -114,7 +75,7 @@ void Motor_PosCtrlCalculate(Motor_PosCtrl_t* hctrl)
 
     ++hctrl->count;
 
-    const float angle = get_angle(hctrl->motor_type, hctrl->motor);
+    const float angle = Motor_GetAngle(hctrl->motor_type, hctrl->motor);
     // 检测电机是否就位
     if (fabsf(angle - hctrl->position_pid.ref) < hctrl->settle.error_threshold)
         ++hctrl->settle.counter;
@@ -131,7 +92,7 @@ void Motor_PosCtrlCalculate(Motor_PosCtrl_t* hctrl)
     }
 
     hctrl->velocity_pid.ref = hctrl->position_pid.output;
-    hctrl->velocity_pid.fdb = get_velocity(hctrl->motor_type, hctrl->motor);
+    hctrl->velocity_pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
     MotorPID_Calculate(&hctrl->velocity_pid);
 
     set_output(hctrl->motor_type, hctrl->motor, hctrl->velocity_pid.output);
@@ -146,7 +107,7 @@ void Motor_VelCtrlCalculate(Motor_VelCtrl_t* hctrl)
     if (!hctrl->enable)
         return;
 
-    hctrl->pid.fdb = get_velocity(hctrl->motor_type, hctrl->motor);
+    hctrl->pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
     MotorPID_Calculate(&hctrl->pid);
 
     set_output(hctrl->motor_type, hctrl->motor, hctrl->pid.output);
