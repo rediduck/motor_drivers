@@ -7,17 +7,19 @@
  * 支持的电机类型和依赖
  *   - drivers/DJI.h: 大疆电机
  *   - drivers/tb6612.h: 由 TB6612 芯片驱动的直流电机
+ *   - drivers/vesc.h: VESC 电调驱动的电机
  */
 #ifndef MOTOR_IF_H
 #define MOTOR_IF_H
 
-#define __MOTOR_IF_VERSION__ "0.1.3"
+#define __MOTOR_IF_VERSION__ "0.2.0"
 
 #include <stdbool.h>
 #include "libs/pid_motor.h"
 
 #define USE_DJI
 #define USE_TB6612
+#define USE_VESC
 
 #ifdef USE_DJI
 #include "drivers/DJI.h"
@@ -25,6 +27,10 @@
 
 #ifdef USE_TB6612
 #include "drivers/tb6612.h"
+#endif
+
+#ifdef USE_VESC
+#include "drivers/vesc.h"
 #endif
 
 
@@ -35,6 +41,9 @@ typedef enum
 #endif
 #ifdef USE_TB6612
     MOTOR_TYPE_TB6612,
+#endif
+#ifdef USE_VESC
+    MOTOR_TYPE_VESC,
 #endif
 } MotorType_t;
 
@@ -50,6 +59,7 @@ typedef struct
     MotorPID_t position_pid;     //< 外环，位置环
     uint32_t pos_vel_freq_ratio; //< 内外环频率比
     uint32_t count;              //< 计数
+    float position;              //< 当前控制的位置
 
     struct
     {
@@ -84,6 +94,7 @@ typedef struct
     MotorType_t motor_type; //< 受控电机类型
     void* motor;            //< 受控电机
     MotorPID_t pid;         //< 速度环
+    float velocity;         //< 当前控制的速度
 } Motor_VelCtrl_t;
 
 /**
@@ -98,8 +109,8 @@ typedef struct
 
 void Motor_PosCtrl_Init(Motor_PosCtrl_t* hctrl, Motor_PosCtrlConfig_t config);
 void Motor_VelCtrl_Init(Motor_VelCtrl_t* hctrl, Motor_VelCtrlConfig_t config);
-void Motor_PosCtrlCalculate(Motor_PosCtrl_t* hctrl);
-void Motor_VelCtrlCalculate(Motor_VelCtrl_t* hctrl);
+void Motor_PosCtrlUpdate(Motor_PosCtrl_t* hctrl);
+void Motor_VelCtrlUpdate(Motor_VelCtrl_t* hctrl);
 
 /**
  * 启用电机控制
@@ -139,14 +150,24 @@ static inline bool Motor_PosCtrl_IsSettle(Motor_PosCtrl_t* hctrl)
  * @param hctrl 受控对象
  * @param ref 目标值 (unit: deg)
  */
-static inline void Motor_PosCtrl_SetRef(Motor_PosCtrl_t* hctrl, const float ref) { hctrl->position_pid.ref = ref; }
+static inline void Motor_PosCtrl_SetRef(Motor_PosCtrl_t* hctrl, const float ref) { hctrl->position = ref; }
 
 /**
  * 设置速度环目标值
  * @param hctrl 受控对象
  * @param ref 目标值 (unit: rpm)
  */
-static inline void Motor_VelCtrl_SetRef(Motor_VelCtrl_t* hctrl, const float ref) { hctrl->pid.ref = ref; }
+static inline void Motor_VelCtrl_SetRef(Motor_VelCtrl_t* hctrl, const float ref)
+{
+    hctrl->velocity = ref;
+#ifdef USE_VESC
+    if (hctrl->motor_type == MOTOR_TYPE_VESC)
+    {
+        // 在纯速度控制下 VESC 的发送频率可能不会很高（节约 CAN 总线），所以 SetRef 时就进行一次发送
+        Motor_VelCtrlUpdate(hctrl);
+    }
+#endif
+}
 
 /* 电机反馈量 */
 
@@ -167,6 +188,10 @@ static inline float Motor_GetAngle(const MotorType_t motor_type, void* hmotor)
 #ifdef USE_TB6612
     case MOTOR_TYPE_TB6612:
         return __TB6612_GET_ANGLE(hmotor);
+#endif
+#ifdef USE_VESC
+    case MOTOR_TYPE_VESC:
+        return __VESC_GET_ANGLE(hmotor);
 #endif
     default:
         return 0.0f;
@@ -190,6 +215,10 @@ static inline float Motor_GetVelocity(const MotorType_t motor_type, void* hmotor
 #ifdef USE_TB6612
     case MOTOR_TYPE_TB6612:
         return __TB6612_GET_VELOCITY(hmotor);
+#endif
+#ifdef USE_VESC
+    case MOTOR_TYPE_VESC:
+        return __VESC_GET_VELOCITY(hmotor);
 #endif
     default:
         return 0.0f;

@@ -6,6 +6,7 @@
  */
 #include "motor_if.h"
 #include <math.h>
+#include <string.h>
 
 /**
  * 设置控制量
@@ -27,6 +28,11 @@ static inline void set_output(const MotorType_t motor_type, void* hmotor, float 
     case MOTOR_TYPE_TB6612:
         return TB6612_SetSpeed(hmotor, output);
 #endif
+#ifdef USE_VESC
+    case MOTOR_TYPE_VESC:
+        /* 语义不符合，不将设置速度控制归类为控制输出 */
+        return;
+#endif
     default:
         break;
     }
@@ -42,10 +48,20 @@ void Motor_PosCtrl_Init(Motor_PosCtrl_t* hctrl, const Motor_PosCtrlConfig_t conf
 {
     hctrl->motor_type = config.motor_type;
     hctrl->motor      = config.motor;
-    MotorPID_Init(&hctrl->velocity_pid, config.velocity_pid);
+#ifdef USE_VESC
+    if (config.motor_type == MOTOR_TYPE_VESC)
+    {
+        // VESC 电调可以使用自己的速度环
+        memset(&hctrl->velocity_pid, 0, sizeof(MotorPID_t));
+        hctrl->pos_vel_freq_ratio = 1;
+    }
+    else
+#endif
+    {
+        MotorPID_Init(&hctrl->velocity_pid, config.velocity_pid);
+        hctrl->pos_vel_freq_ratio = config.pos_vel_freq_ratio ? config.pos_vel_freq_ratio : 1;
+    }
     MotorPID_Init(&hctrl->position_pid, config.position_pid);
-
-    hctrl->pos_vel_freq_ratio = config.pos_vel_freq_ratio ? config.pos_vel_freq_ratio : 1;
 
     hctrl->settle.count_max       = config.settle_count_max ? config.settle_count_max : 50;
     hctrl->settle.error_threshold = config.error_threshold;
@@ -64,15 +80,22 @@ void Motor_VelCtrl_Init(Motor_VelCtrl_t* hctrl, const Motor_VelCtrlConfig_t conf
 {
     hctrl->motor_type = config.motor_type;
     hctrl->motor      = config.motor;
+    hctrl->enable     = true;
+
+    /* VESC 电调忽略 PID 配置*/
+#ifdef USE_VESC
+    if (config.motor_type == MOTOR_TYPE_VESC)
+        return;
+#endif
+
     MotorPID_Init(&hctrl->pid, config.pid);
-    hctrl->enable = true;
 }
 
 /**
  * 位置环控制计算
  * @param hctrl 受控对象
  */
-void Motor_PosCtrlCalculate(Motor_PosCtrl_t* hctrl)
+void Motor_PosCtrlUpdate(Motor_PosCtrl_t* hctrl)
 {
     if (!hctrl->enable)
         return;
@@ -89,30 +112,53 @@ void Motor_PosCtrlCalculate(Motor_PosCtrl_t* hctrl)
 
     if (hctrl->count == hctrl->pos_vel_freq_ratio)
     {
+        hctrl->position_pid.ref = hctrl->position;
         // 反馈为当前电机输出角度
         hctrl->position_pid.fdb = angle;
         MotorPID_Calculate(&hctrl->position_pid);
         hctrl->count = 0;
     }
 
-    hctrl->velocity_pid.ref = hctrl->position_pid.output;
-    hctrl->velocity_pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
-    MotorPID_Calculate(&hctrl->velocity_pid);
-
-    set_output(hctrl->motor_type, hctrl->motor, hctrl->velocity_pid.output);
+#ifdef USE_VESC
+    if (hctrl->motor_type == MOTOR_TYPE_VESC)
+    {
+        VESC_SendSetCmd(hctrl->motor, VESC_CAN_SET_RPM, hctrl->position_pid.output);
+    }
+    else
+#endif
+    {
+        hctrl->velocity_pid.ref = hctrl->position_pid.output;
+        hctrl->velocity_pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
+        MotorPID_Calculate(&hctrl->velocity_pid);
+        set_output(hctrl->motor_type, hctrl->motor, hctrl->velocity_pid.output);
+    }
 }
 
 /**
  * 速度环控制计算
  * @param hctrl 受控对象
  */
-void Motor_VelCtrlCalculate(Motor_VelCtrl_t* hctrl)
+void Motor_VelCtrlUpdate(Motor_VelCtrl_t* hctrl)
 {
     if (!hctrl->enable)
         return;
 
-    hctrl->pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
-    MotorPID_Calculate(&hctrl->pid);
+    /**
+     * VESC 电调的 PID 控制由他自己完成，我们只需要发送控制指令
+     * 控制指令频率不小于 5Hz
+     */
+#ifdef USE_VESC
+    if (hctrl->motor_type == MOTOR_TYPE_VESC)
+    {
+        VESC_SendSetCmd(hctrl->motor, VESC_CAN_SET_RPM, hctrl->velocity);
+    }
+    else
+#endif
+    {
+        hctrl->pid.ref = hctrl->velocity;
+        hctrl->pid.fdb = Motor_GetVelocity(hctrl->motor_type, hctrl->motor);
+        MotorPID_Calculate(&hctrl->pid);
 
-    set_output(hctrl->motor_type, hctrl->motor, hctrl->pid.output);
+        set_output(hctrl->motor_type, hctrl->motor, hctrl->pid.output);
+    }
 }
