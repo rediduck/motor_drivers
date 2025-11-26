@@ -9,6 +9,7 @@
  *   - drivers/tb6612.h: 由 TB6612 芯片驱动的直流电机
  *   - drivers/vesc.h: VESC 电调驱动的电机
  *
+ *
  * --------------------------------------------------------------------------
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +25,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  * Project repository: https://github.com/HITSZ-WTR2026/motor_drivers
+ *
+ *
  */
 #ifndef MOTOR_IF_H
 #define MOTOR_IF_H
@@ -53,6 +56,7 @@
 #define USE_DJI
 #define USE_TB6612
 #define USE_VESC
+#define USE_DM
 
 #ifdef USE_DJI
 #include "drivers/DJI.h"
@@ -65,6 +69,11 @@
 #ifdef USE_VESC
 #include "drivers/vesc.h"
 #define MOTOR_IF_INTERNAL_VEL
+#endif
+
+#ifdef USE_DM
+#include "drivers/DM.h"
+#define MOTOR_IF_INTERNAL_VEL_POS
 #endif
 
 #ifdef __cplusplus
@@ -81,6 +90,9 @@ typedef enum
 #endif
 #ifdef USE_VESC
     MOTOR_TYPE_VESC,
+#endif
+#ifdef USE_DM
+    MOTOR_TYPE_DM,
 #endif
 } MotorType_t;
 /**
@@ -109,6 +121,11 @@ typedef enum
 
 #if defined(USE_VESC) && !defined(MOTOR_DEFAULT_MODE_VESC)
 #define MOTOR_DEFAULT_MODE_VESC MOTOR_CTRL_INTERNAL_VEL
+#endif
+
+#if defined(USE_DM) && !defined(MOTOR_DEFAULT_MODE_DM)
+#define MOTOR_DEFAULT_MODE_DM MOTOR_CTRL_INTERNAL_VEL // 考虑到需要对舵轮实现速度位置双重控制，遂只用DM内部速度环，外部设置位置环；如果需要使用达妙位置环需要自己define
+
 #endif
 
 /**
@@ -281,6 +298,10 @@ static inline float Motor_GetAngle(const MotorType_t motor_type, void* hmotor)
     case MOTOR_TYPE_VESC:
         return __VESC_GET_ANGLE(hmotor);
 #endif
+#ifdef USE_DM
+    case MOTOR_TYPE_DM:
+        return __DM_GET_ANGLE(hmotor);
+#endif
     default:
         return 0.0f;
     }
@@ -303,6 +324,11 @@ static inline void Motor_ResetAngle(const MotorType_t motor_type, void* hmotor)
 #ifdef USE_VESC
     case MOTOR_TYPE_VESC:
         VESC_ResetAngle(hmotor);
+        break;
+#endif
+#ifdef USE_DM
+    case MOTOR_TYPE_DM:
+
         break;
 #endif
     default:;
@@ -331,6 +357,10 @@ static inline float Motor_GetVelocity(const MotorType_t motor_type, void* hmotor
     case MOTOR_TYPE_VESC:
         return __VESC_GET_VELOCITY(hmotor);
 #endif
+#ifdef USE_DM
+    case MOTOR_TYPE_DM:
+        return __DM_GET_VELOCITY(hmotor);
+#endif
     default:
         return 0.0f;
     }
@@ -338,5 +368,6 @@ static inline float Motor_GetVelocity(const MotorType_t motor_type, void* hmotor
 #ifdef __cplusplus
 }
 #endif
+
 
 #endif // MOTOR_IF_H
